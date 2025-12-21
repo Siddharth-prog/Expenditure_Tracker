@@ -1,9 +1,11 @@
+import PublicNavbar from "./components/layout/PublicNavbar.jsx";
+import Home from "./public/Home.jsx";
+import AppRoutes from "./Routes.jsx";
+
 export default function App() {
   return (
-    <div className="h-screen bg-red-600 flex items-center justify-center">
-      <h1 className="text-white text-4xl font-bold">
-        Tailwind LIVE
-      </h1>
+     <div className="dark bg-bg text-textPrimary min-h-screen">
+      <AppRoutes />
     </div>
   );
 }
