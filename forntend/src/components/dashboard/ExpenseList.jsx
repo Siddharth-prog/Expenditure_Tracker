@@ -1,29 +1,42 @@
-import { expenses } from "../../data/dummyFinanceData";
-
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchExpenses, addExpense } from "../../service/expense.service"; 
 export default function ExpenseList() {
-  return (
-    <div className="bg-surface border border-border rounded-xl p-5 overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="text-textMuted">
-          <tr>
-            <th className="text-left py-2">Title</th>
-            <th>Category</th>
-            <th>Date</th>
-            <th>Amount</th>
-          </tr>
-        </thead>
+  const queryClient = useQueryClient();
 
-        <tbody>
-          {expenses.map((e) => (
-            <tr key={e.id} className="border-t border-border">
-              <td className="py-2">{e.title}</td>
-              <td>{e.category}</td>
-              <td>{e.date}</td>
-              <td className="text-right">₹{e.amount}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["expenses"],
+    queryFn: fetchExpenses,
+  });
+
+  const mutation = useMutation({
+    mutationFn: addExpense,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["budgets"] }); // 🔥 KEY
+    },
+  });
+
+  return (
+    <div className="bg-surface p-6 rounded-xl space-y-4">
+      <button
+        onClick={() =>
+          mutation.mutate({
+            amount: 800,
+            category: "Food",
+            section: "Lifestyle",
+          })
+        }
+        className="bg-glow text-bg px-4 py-2 rounded-lg"
+      >
+        + Add Dummy Expense
+      </button>
+
+      {expenses.map((e) => (
+        <div key={e.id} className="flex justify-between text-sm">
+          <span>{e.category}</span>
+          <span>₹{e.amount}</span>
+        </div>
+      ))}
     </div>
   );
 }

@@ -16,6 +16,8 @@ export default function DashboardNavbar() {
           <NavLink to="/dashboard/monthly">Monthly</NavLink>
           <NavLink to="/dashboard/yearly">Yearly</NavLink>
           <NavLink to="/dashboard/budget">Budgets</NavLink>
+          <NavLink to="/dashboard/monthly-plan">Monthly Plan</NavLink>
+
         </nav>
 
         {/* Mobile Nav */}

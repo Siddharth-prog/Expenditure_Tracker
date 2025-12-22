@@ -5,15 +5,15 @@ export default function AddExpense() {
 
       {/* POST /api/expenses */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <input className="input" placeholder="Title" />
-        <input className="input" placeholder="Amount" type="number" />
-        <select className="input">
+        <input className="text-gray-700" placeholder="Title" />
+        <input className="text-black" placeholder="Amount" type="number" />
+        <select className="text-black">
           <option>Food</option>
           <option>Travel</option>
           <option>Shopping</option>
           <option>Utilities</option>
         </select>
-        <input className="input" type="date" />
+        <input className="text-black" type="date" />
       </div>
 
       <button className="mt-4 w-full sm:w-auto bg-glow px-6 py-2 rounded text-bg">

@@ -1,70 +1,80 @@
-import { useState } from "react";
-import { budgetSections as rawSections } from "../../data/dummyBudgetData";
-
-/* ---------------- NORMALIZER ---------------- */
-const normalizeSections = (sections = []) =>
-  sections.map((s) => ({
-    section: s.section ?? "Unnamed",
-    limit: Number(s.limit ?? 0),
-    categories: Array.isArray(s.categories) ? s.categories : [],
-  }));
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchExpenses,  fetchMonthlyPlan,
+  updateSectionLimit } from "../../service/expense.service.js";
+  
 
 export function useBudgets() {
-  const [sections, setSections] = useState(
-    normalizeSections(rawSections)
-  );
+  const queryClient = useQueryClient();
 
-  /* ---------------- ADD SECTION ---------------- */
-  const addSection = (newSection) => {
-    const sectionName = newSection.section?.trim();
-    if (!sectionName) return;
+  /* ---------- FETCH MONTHLY PLAN ---------- */
+  const monthlyPlanQuery = useQuery({
+    queryKey: ["monthly-plan"],
+    queryFn: fetchMonthlyPlan,
+  });
 
-    const exists = sections.some(
-      (s) =>
-        s.section.toLowerCase() === sectionName.toLowerCase()
-    );
+  /* ---------- FETCH EXPENSES ---------- */
+  const expensesQuery = useQuery({
+    queryKey: ["expenses"],
+    queryFn: fetchExpenses,
+  });
 
-    if (exists) {
-      alert("Section already exists");
-      return;
-    }
+  const isLoading =
+    monthlyPlanQuery.isLoading || expensesQuery.isLoading;
+  const isError =
+    monthlyPlanQuery.isError || expensesQuery.isError;
 
-    setSections((prev) =>
-      normalizeSections([...prev, newSection])
-    );
+  /* ---------- MERGE DATA ---------- */
+  const sections = (() => {
+    if (!monthlyPlanQuery.data || !expensesQuery.data) return [];
 
-    // BACKEND (later)
-    // budgetService.createSection(newSection);
-  };
+    const { divisions } = monthlyPlanQuery.data;
+    const expenses = expensesQuery.data;
 
-  /* ---------------- DELETE SECTION ---------------- */
-  const deleteSection = (sectionName) => {
-    setSections((prev) =>
-      normalizeSections(
-        prev.filter((s) => s.section !== sectionName)
-      )
-    );
+    return divisions.map((div) => {
+      const divisionExpenses = expenses.filter(
+        (e) => e.division === div.name
+      );
 
-    // budgetService.deleteSection(sectionName);
-  };
+      const spent = divisionExpenses.reduce(
+        (sum, e) => sum + e.amount,
+        0
+      );
 
-  /* ---------------- UPDATE LIMIT ---------------- */
-  const updateLimit = (index, value) => {
-    setSections((prev) =>
-      normalizeSections(
-        prev.map((sec, i) =>
-          i === index ? { ...sec, limit: value } : sec
-        )
-      )
-    );
+      const categoriesMap = {};
+      divisionExpenses.forEach((e) => {
+        categoriesMap[e.category] ??= {
+          name: e.category,
+          spent: 0,
+        };
+        categoriesMap[e.category].spent += e.amount;
+      });
 
-    // budgetService.updateLimit(sections[index].section, value);
+      return {
+        section: div.name,
+        allocated: div.allocated,
+        spent,
+        remaining: div.allocated - spent,
+        categories: Object.values(categoriesMap),
+      };
+    });
+  })();
+
+  /* ---------- UPDATE LIMIT ---------- */
+  const updateLimitMutation = useMutation({
+    mutationFn: updateSectionLimit,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["monthly-plan"] });
+    },
+  });
+
+  const updateLimit = (section, limit) => {
+    updateLimitMutation.mutate({ section, limit });
   };
 
   return {
     sections,
-    addSection,
-    deleteSection,
+    isLoading,
+    isError,
     updateLimit,
   };
 }

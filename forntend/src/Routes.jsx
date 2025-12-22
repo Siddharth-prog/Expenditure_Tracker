@@ -17,6 +17,7 @@ import AllocateBudget from "./pages/dashboard/AllocateBudget.jsx";
 import YearlyReview from "./pages/dashboard/YearlyReview.jsx";
 import Expenses from "./pages/dashboard/Expenses.jsx";
 import Savings from "./pages/dashboard/Savings.jsx";
+import MonthlyPlan from "./pages/dashboard/MonthlyPlan.jsx";
 
 /* Future (after login) */
 // import Dashboard from "./pages/dashboard/Dashboard";
@@ -45,7 +46,7 @@ export default function AppRoutes() {
         <Route path="/dashboard/budget" element={<AllocateBudget />} />
         <Route path="/dashboard/expenses" element={<Expenses />} />
         <Route path="/dashboard/savings" element={<Savings />} />
-
+        <Route path="/dashboard/monthly-plan" element={<MonthlyPlan/>}/>
     </Routes>
   );
 }
