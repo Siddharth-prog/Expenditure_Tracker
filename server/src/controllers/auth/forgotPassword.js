@@ -1,6 +1,6 @@
-import User from "../../models/user";
-import { signToken } from "../../utils/jwt";
-import { sendEmail } from "../../utils/mailer";
+import User from "../../models/user.js";
+import { signToken } from "../../utils/jwt.js";
+import { sendEmail } from "../../utils/mailer.js";
 
 export const forgotPassword = async (email) => {
   const user = await User.findOne({ email });

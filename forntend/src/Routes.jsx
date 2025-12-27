@@ -18,6 +18,8 @@ import YearlyReview from "./pages/dashboard/YearlyReview.jsx";
 import Expenses from "./pages/dashboard/Expenses.jsx";
 import Savings from "./pages/dashboard/Savings.jsx";
 import MonthlyPlan from "./pages/dashboard/MonthlyPlan.jsx";
+import VerifyEmail from "./pages/auth/verifyEmail.jsx";
+import VerifyEmailCallback from "./pages/auth/verifyEmailCallback.jsx";
 
 /* Future (after login) */
 // import Dashboard from "./pages/dashboard/Dashboard";
@@ -34,7 +36,8 @@ export default function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
-
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/verify-email/callback" element={<VerifyEmailCallback />} />
       {/* After OAuth → force password setup */}
       <Route path="/set-password" element={<SetPassword />} />
 

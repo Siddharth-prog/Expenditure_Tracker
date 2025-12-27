@@ -18,3 +18,6 @@ export const resetPassword = (data) =>
 
 export const setPassword = (data) =>
   api.post("/auth/set-password", data);
+
+export const resendVerification = (email) =>
+  api.post("/auth/resend-verification", { email });
