@@ -22,7 +22,8 @@ export const login = async (req, res) => {
 
     if (!user.emailVerified) {
       return res.status(403).json({
-        message: "Please verify your email",
+        message: "Email not verified",
+        code: "EMAIL_NOT_VERIFIED",
       });
     }
 

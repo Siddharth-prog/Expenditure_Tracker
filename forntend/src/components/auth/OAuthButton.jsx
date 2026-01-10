@@ -1,12 +1,12 @@
 export default function OAuthButton() {
   const handleGoogleLogin = () => {
-    // BACKEND:
-    // GET /api/auth/google
-    window.location.href = "http://localhost:5000/api/auth/google";
+    window.location.href =
+      import.meta.env.VITE_API_URL + "/auth/google";
   };
 
   return (
     <button
+      type="button"
       onClick={handleGoogleLogin}
       className="
         w-full mt-4

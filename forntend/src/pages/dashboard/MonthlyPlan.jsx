@@ -1,5 +1,4 @@
 import DashboardNavbar from "../../components/dashboard/DashboardNavbar";
-import { useState } from "react";
 import {
   PieChart,
   Pie,
@@ -7,171 +6,189 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useMonthlyPlan } from "../../hooks/budget/useMonthlyPlan";
 
 const COLORS = ["#7C7CFF", "#34D399", "#FBBF24", "#F87171"];
 
 export default function MonthlyPlan() {
-  const [income, setIncome] = useState(50000);
+  const month = new Date().toISOString().slice(0, 7);
 
-  // 🔑 Budget divisions defined here
-  const [divisions, setDivisions] = useState([
-    { name: "Essentials", allocated: 30000 },
-    { name: "Lifestyle", allocated: 15000 },
-  ]);
+  const {
+    plan,
+    lockedSections,
+    savePlan,
+    copyLastMonth,
+    isLoading,
+  } = useMonthlyPlan(month);
 
-  /* ---------- AGGREGATION FOR PIE ---------- */
-  const pieData = divisions.map((d) => ({
-    name: d.name,
-    value: d.allocated,
+  if (isLoading || !plan) return null;
+
+  /* ---------- DERIVED DATA ---------- */
+  const pieData = plan.sections.map((s) => ({
+    name: s.section,
+    value: s.limit,
   }));
 
-  const totalAllocated = divisions.reduce(
-    (sum, d) => sum + d.allocated,
+  const totalAllocated = plan.sections.reduce(
+    (sum, s) => sum + s.limit,
     0
   );
 
-  /* ---------- ADD DIVISION ---------- */
-  const addDivision = () => {
-    setDivisions((prev) => [
-      ...prev,
-      { name: "", allocated: 0 },
-    ]);
-  };
+  const isOverAllocated = totalAllocated > plan.income;
 
-  /* ---------- UPDATE DIVISION ---------- */
-  const updateDivision = (index, key, value) => {
-    setDivisions((prev) =>
-      prev.map((d, i) =>
-        i === index ? { ...d, [key]: value } : d
-      )
-    );
-  };
-
-  /* ---------- SAVE (BACKEND HOOK) ---------- */
-  const saveMonthlyPlan = () => {
-    const payload = {
-      month: "2025-01", // backend-generated ideally
+  /* ---------- UPDATE HELPERS ---------- */
+  const updateIncome = (income) => {
+    savePlan({
+      month,
       income,
-      divisions,
+      sections: plan.sections,
+    });
+  };
+
+  const updateSection = (index, key, value) => {
+    const updated = [...plan.sections];
+    updated[index] = {
+      ...updated[index],
+      [key]: value,
     };
 
-    console.log("SEND TO BACKEND:", payload);
+    savePlan({
+      month,
+      income: plan.income,
+      sections: updated,
+    });
+  };
 
-    // 🔌 BACKEND
-    // POST /api/monthly-plan
+  const addSection = () => {
+    savePlan({
+      month,
+      income: plan.income,
+      sections: [
+        ...plan.sections,
+        { section: "", limit: 0 },
+      ],
+    });
   };
 
   return (
     <div className="bg-bg min-h-screen">
       <DashboardNavbar />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <h2 className="text-lg sm:text-xl md:text-2xl font-semibold text-textPrimary">
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+        <h2 className="text-2xl font-semibold">
           Monthly Budget Plan
         </h2>
 
+        {/* COPY LAST MONTH */}
+        <button
+          onClick={() => copyLastMonth(month)}
+          className="text-sm text-glow hover:underline"
+        >
+          Copy last month
+        </button>
+
         {/* INCOME */}
-        <div className="bg-surface border border-border rounded-xl p-4">
-          <label className="text-sm text-textSecondary">
-            Monthly Income
-          </label>
+        <div className="bg-surface p-4 rounded-xl">
+          <label className="text-sm">Monthly Income</label>
           <input
             type="number"
-            value={income}
-            onChange={(e) => setIncome(+e.target.value)}
+            value={plan.income}
+            onChange={(e) =>
+              updateIncome(Number(e.target.value))
+            }
             className="text-black mt-2"
           />
         </div>
 
-        {/* DIVISIONS */}
-        <div className="bg-surface border border-border rounded-xl p-4 space-y-4">
-          <h3 className="font-semibold text-textPrimary">
-            Budget Divisions
-          </h3>
+        {/* SECTIONS */}
+        <div className="bg-surface p-4 rounded-xl space-y-4">
+          <h3 className="font-semibold">Budget Divisions</h3>
 
-          {divisions.map((d, index) => (
-            <div
-              key={index}
-              className="grid grid-cols-1 sm:grid-cols-3 gap-3"
-            >
-              <input
-                className="text-green-700"
-                placeholder="Division name (e.g. Lifestyle)"
-                value={d.name}
-                onChange={(e) =>
-                  updateDivision(index, "name", e.target.value)
-                }
-              />
+          {plan.sections.map((s, index) => {
+            const locked = lockedSections.includes(
+              s.section
+            );
 
-              <input
-                type="number"
-                className="text-blue-700"
-                placeholder="Allocated amount"
-                value={d.allocated}
-                onChange={(e) =>
-                  updateDivision(
-                    index,
-                    "allocated",
-                    Number(e.target.value)
-                  )
-                }
-              />
-            </div>
-          ))}
+            return (
+              <div
+                key={index}
+                className="grid sm:grid-cols-3 gap-3"
+              >
+                <input
+                  value={s.section}
+                  disabled={locked}
+                  onChange={(e) =>
+                    updateSection(
+                      index,
+                      "section",
+                      e.target.value
+                    )
+                  }
+                  className="text-black"
+                />
+
+                <input
+                  type="number"
+                  value={s.limit}
+                  disabled={locked}
+                  onChange={(e) =>
+                    updateSection(
+                      index,
+                      "limit",
+                      Number(e.target.value)
+                    )
+                  }
+                  className="text-black"
+                />
+
+                {locked && (
+                  <p className="text-xs text-danger">
+                    Locked (expenses exist)
+                  </p>
+                )}
+              </div>
+            );
+          })}
 
           <button
-            onClick={addDivision}
-            className="text-sm text-glow hover:underline"
+            onClick={addSection}
+            className="text-glow"
           >
             + Add Budget Division
           </button>
         </div>
 
-        {/* PIE CHART */}
-        <div className="bg-surface border border-border rounded-xl p-4">
-          <h3 className="font-semibold text-textPrimary mb-4">
-            Allocation Overview
-          </h3>
-
-          <div className="h-[260px] sm:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  innerRadius={60}
-                  outerRadius={90}
-                >
-                  {pieData.map((_, i) => (
-                    <Cell
-                      key={i}
-                      fill={COLORS[i % COLORS.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+        {/* PIE */}
+        <div className="bg-surface p-4 rounded-xl">
+          <ResponsiveContainer height={280}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                innerRadius={60}
+              >
+                {pieData.map((_, i) => (
+                  <Cell
+                    key={i}
+                    fill={COLORS[i % COLORS.length]}
+                  />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
 
           <p
-            className={`text-sm mt-4 ${
-              totalAllocated > income
+            className={`mt-4 text-sm ${
+              isOverAllocated
                 ? "text-danger"
                 : "text-textSecondary"
             }`}
           >
-            Allocated ₹{totalAllocated} / ₹{income}
+            Allocated ₹{totalAllocated} / ₹
+            {plan.income}
           </p>
         </div>
-
-        {/* SAVE */}
-        <button
-          onClick={saveMonthlyPlan}
-          className="bg-glow text-bg px-6 py-3 rounded-xl w-full sm:w-auto"
-        >
-          Save Monthly Plan
-        </button>
       </div>
     </div>
   );

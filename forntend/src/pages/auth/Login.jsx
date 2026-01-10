@@ -21,13 +21,23 @@ export default function Login() {
   });
 
   const onSubmit = async (data) => {
-    try {
-      await login(data); // cookie set by backend
-      navigate('/dashboard');
-    } catch (err) {
-      alert(err.response?.data?.message || 'Login failed');
+  try {
+    await login(data);
+    navigate("/dashboard");
+  } catch (err) {
+    const code = err.response?.data?.code;
+
+    if (code === "EMAIL_NOT_VERIFIED") {
+      navigate(
+        `/verify-email?email=${encodeURIComponent(data.email)}`
+      );
+      return;
     }
-  };
+
+    alert(err.response?.data?.message || "Login failed");
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg">

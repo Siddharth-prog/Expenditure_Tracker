@@ -1,12 +1,13 @@
 import api from "./axios";
-export const createSection = (data) => {
-  // return api.post("/budget/section", data);
-};
 
-export const deleteSection = (section) => {
-  // return api.delete(`/budget/section/${section}`);
-};
+export const fetchMonthlyPlan = (month) =>
+  api.get("/monthly-plan", { params: { month } }).then(r => r.data);
 
-export const updateLimit = (section, limit) => {
-  // return api.put(`/budget/section/${section}`, { limit });
-};
+export const saveMonthlyPlan = (payload) =>
+  api.post("/monthly-plan", payload);
+
+export const copyLastMonth = (month) =>
+  api.post("/monthly-plan/copy", { month });
+
+export const fetchLockedSections = (month) =>
+  api.get("/monthly-plan/locked", { params: { month } }).then(r => r.data);

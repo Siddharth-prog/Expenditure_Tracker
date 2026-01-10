@@ -1,40 +1,42 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchExpenses, addExpense } from "../../service/expense.service"; 
-export default function ExpenseList() {
-  const queryClient = useQueryClient();
+// src/components/expenses/ExpenseList.jsx
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchExpenses } from "../../api/expense.api";
+import { QK } from "../../constants/queryKeys";
+import { groupByDay } from "../../utils/groupExpenses";
+import ExpenseRow from "./ExpenseRow";
+
+export default function ExpenseList({ month }) {
+  const [openDays, setOpenDays] = useState({});
 
   const { data: expenses = [] } = useQuery({
-    queryKey: ["expenses"],
-    queryFn: fetchExpenses,
+    queryKey: QK.expenses(month),
+    queryFn: () => fetchExpenses(month),
   });
 
-  const mutation = useMutation({
-    mutationFn: addExpense,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["budgets"] }); // 🔥 KEY
-    },
-  });
+  const grouped = groupByDay(expenses);
+
+  const toggle = (day) =>
+    setOpenDays((p) => ({ ...p, [day]: !p[day] }));
 
   return (
-    <div className="bg-surface p-6 rounded-xl space-y-4">
-      <button
-        onClick={() =>
-          mutation.mutate({
-            amount: 800,
-            category: "Food",
-            section: "Lifestyle",
-          })
-        }
-        className="bg-glow text-bg px-4 py-2 rounded-lg"
-      >
-        + Add Dummy Expense
-      </button>
+    <div className="space-y-4">
+      {Object.entries(grouped).map(([day, list]) => (
+        <div key={day} className="bg-surface p-4 rounded-xl">
+          <button
+            onClick={() => toggle(day)}
+            className="font-semibold text-left w-full"
+          >
+            {new Date(day).toDateString()} ({list.length})
+          </button>
 
-      {expenses.map((e) => (
-        <div key={e.id} className="flex justify-between text-sm">
-          <span>{e.category}</span>
-          <span>₹{e.amount}</span>
+          {openDays[day] && (
+            <div className="mt-3 space-y-2">
+              {list.map((e) => (
+                <ExpenseRow key={e._id} expense={e} month={month} />
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>

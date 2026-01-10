@@ -1,80 +1,86 @@
+// src/hooks/budget/useBudgets.js
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchExpenses,  fetchMonthlyPlan,
-  updateSectionLimit } from "../../service/expense.service.js";
-  
+import { fetchMonthlyPlan, saveMonthlyPlan } from "../../api/budget.api";
+import { fetchExpenses } from "../../api/expense.api";
 
-export function useBudgets() {
-  const queryClient = useQueryClient();
+export function useBudgets(month) {
+  const qc = useQueryClient();
 
-  /* ---------- FETCH MONTHLY PLAN ---------- */
-  const monthlyPlanQuery = useQuery({
-    queryKey: ["monthly-plan"],
-    queryFn: fetchMonthlyPlan,
+  /* ---------- FETCH PLAN ---------- */
+  const planQuery = useQuery({
+    queryKey: ["monthly-plan", month],
+    queryFn: () => fetchMonthlyPlan(month),
+    enabled: !!month,
   });
 
   /* ---------- FETCH EXPENSES ---------- */
   const expensesQuery = useQuery({
-    queryKey: ["expenses"],
-    queryFn: fetchExpenses,
+    queryKey: ["expenses", month],
+    queryFn: () => fetchExpenses(month),
+    enabled: !!month,
   });
 
-  const isLoading =
-    monthlyPlanQuery.isLoading || expensesQuery.isLoading;
-  const isError =
-    monthlyPlanQuery.isError || expensesQuery.isError;
-
-  /* ---------- MERGE DATA ---------- */
-  const sections = (() => {
-    if (!monthlyPlanQuery.data || !expensesQuery.data) return [];
-
-    const { divisions } = monthlyPlanQuery.data;
-    const expenses = expensesQuery.data;
-
-    return divisions.map((div) => {
-      const divisionExpenses = expenses.filter(
-        (e) => e.division === div.name
-      );
-
-      const spent = divisionExpenses.reduce(
-        (sum, e) => sum + e.amount,
-        0
-      );
-
-      const categoriesMap = {};
-      divisionExpenses.forEach((e) => {
-        categoriesMap[e.category] ??= {
-          name: e.category,
-          spent: 0,
-        };
-        categoriesMap[e.category].spent += e.amount;
-      });
-
-      return {
-        section: div.name,
-        allocated: div.allocated,
-        spent,
-        remaining: div.allocated - spent,
-        categories: Object.values(categoriesMap),
-      };
-    });
-  })();
-
-  /* ---------- UPDATE LIMIT ---------- */
-  const updateLimitMutation = useMutation({
-    mutationFn: updateSectionLimit,
+  /* ---------- SAVE PLAN ---------- */
+  const saveMutation = useMutation({
+    mutationFn: saveMonthlyPlan,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["monthly-plan"] });
+      qc.invalidateQueries(["monthly-plan", month]);
+      qc.invalidateQueries(["dashboard", month]);
+      qc.invalidateQueries(["expenses", month]);
     },
   });
 
-  const updateLimit = (section, limit) => {
-    updateLimitMutation.mutate({ section, limit });
+  const plan = planQuery.data;
+  const expenses = expensesQuery.data || [];
+
+  /* ---------- MERGE SECTIONS ---------- */
+  const sections =
+    plan?.sections.map((sec) => {
+      const sectionExpenses = expenses.filter(
+        (e) => e.section === sec.section
+      );
+
+      const spent = sectionExpenses.reduce(
+        (s, e) => s + e.amount,
+        0
+      );
+
+      const categories = {};
+      sectionExpenses.forEach((e) => {
+        if (!e.category) return;
+        categories[e.category] ??= { name: e.category, spent: 0 };
+        categories[e.category].spent += e.amount;
+      });
+
+      return {
+        section: sec.section,
+        limit: sec.limit,
+        spent,
+        categories: Object.values(categories),
+      };
+    }) || [];
+
+  /* ---------- ✅ updateLimit (THIS WAS MISSING) ---------- */
+  const updateLimit = (sectionName, newLimit) => {
+    if (!plan) return;
+
+    const updatedSections = plan.sections.map((s) =>
+      s.section === sectionName ? { ...s, limit: newLimit } : s
+    );
+
+    saveMutation.mutate({
+      month,
+      income: plan.income,
+      sections: updatedSections,
+    });
   };
 
   return {
+    plan,
     sections,
-    isLoading,
-    isError,
-    updateLimit,
+    updateLimit,   // ✅ NOW PRESENT
+    savePlan: saveMutation.mutate,
+    isLoading: planQuery.isLoading || expensesQuery.isLoading,
+    isError: planQuery.isError || expensesQuery.isError,
   };
 }

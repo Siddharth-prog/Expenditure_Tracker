@@ -21,7 +21,7 @@ export const resetPassword = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({
+      return res.status(401).json({
         message: "Invalid or expired reset token",
       });
     }
@@ -38,8 +38,7 @@ export const resetPassword = async (req, res) => {
     });
   } catch (err) {
     console.error("RESET PASSWORD ERROR:", err);
-
-    return res.status(400).json({
+    return res.status(401).json({
       message: "Invalid or expired reset token",
     });
   }

@@ -13,8 +13,8 @@ export const googleAuth = (token) =>
 export const forgotPassword = (email) =>
   api.post("/auth/forgot-password", { email });
 
-export const resetPassword = (data) =>
-  api.post("/auth/reset-password", data);
+export const resetPassword = ({token, password}) =>
+  api.post("/auth/reset-password", {token, password});
 
 export const setPassword = (data) =>
   api.post("/auth/set-password", data);
