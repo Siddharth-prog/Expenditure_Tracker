@@ -1,21 +1,21 @@
-// src/hooks/expense/useDeleteExpense.js
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteExpense } from "../../api/expense.api";
-import { QK } from "../../constants/queryKeys";
+// src/hooks/expense/useEditExpense.js
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { updateExpense } from '../../api/expense.api';
+import { QK } from '../../constants/queryKeys';
 
-export const useDeleteExpense = (month) => {
+export const useEditExpense = (month) => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: deleteExpense,
+    mutationFn: updateExpense,
 
-    onMutate: async (id) => {
+    onMutate: async ({ id, data }) => {
       await qc.cancelQueries(QK.expenses(month));
+
       const prev = qc.getQueryData(QK.expenses(month)) || [];
 
-      qc.setQueryData(
-        QK.expenses(month),
-        prev.filter((e) => e._id !== id)
+      qc.setQueryData(QK.expenses(month), (old = []) =>
+        old.map((e) => (e._id === id ? { ...e, ...data } : e))
       );
 
       return { prev };
@@ -31,7 +31,6 @@ export const useDeleteExpense = (month) => {
       qc.invalidateQueries(QK.expenses(month));
       qc.invalidateQueries(QK.dashboard(month));
       qc.invalidateQueries(QK.monthlyPlan(month));
-      qc.invalidateQueries(QK.budget(month));
     },
   });
 };
