@@ -41,7 +41,7 @@ export default function AppRoutes() {
       {/* After OAuth → force password setup */}
       <Route path="/set-password" element={<SetPassword />} />
 
-      
+     
       <Route path="/dashboard" element={ <Dashboard /> }/>
       <Route path="/dashboard/daily" element={<DailyReview />} />
        <Route path="/dashboard/monthly" element={<MonthlyReview />} />

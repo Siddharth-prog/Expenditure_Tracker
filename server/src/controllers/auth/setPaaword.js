@@ -4,36 +4,24 @@ import { verifyToken } from "../../utils/jwt.js";
 
 export const setPasswordOauth = async (req, res) => {
   try {
+    console.log("REQ BODY:", req.body);
+
     const { token, password } = req.body;
 
-    if (!token || !password) {
-      return res.status(400).json({
-        message: "Token and password are required",
-      });
-    }
-
     const payload = verifyToken(token);
+    console.log("JWT PAYLOAD:", payload);
 
     const user = await User.findById(payload.id);
-    if (!user) {
-      return res.status(404).json({
-        message: "User not found",
-      });
-    }
+    console.log("USER FOUND:", user?._id);
 
     user.password = await hashPassword(password);
     user.passwordSet = true;
 
     await user.save();
 
-    return res.status(200).json({
-      message: "Password set successfully",
-    });
+    return res.status(200).json({ message: "Password set" });
   } catch (err) {
-    console.error("SET PASSWORD OAUTH ERROR:", err);
-
-    return res.status(400).json({
-      message: "Invalid or expired token",
-    });
+    console.error("SET PASSWORD ERROR:", err.message);
+    return res.status(400).json({ message: "Invalid or expired token" });
   }
 };

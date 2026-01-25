@@ -31,6 +31,19 @@ export default function AllocateBudget() {
     });
   };
 
+  if (!plan || sections.length === 0) {
+    return (
+      <div className="bg-bg min-h-screen">
+        <DashboardNavbar />
+        <p className="p-6 text-textMuted">
+          No budget found for this month.
+          <br />
+          Please create a Monthly Budget first.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-bg min-h-screen">
       <DashboardNavbar />

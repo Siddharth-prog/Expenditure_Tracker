@@ -8,7 +8,7 @@ import { register as signup } from "../../api/auth.api.js";
 import AuthLayout from "../../components/auth/AuthLayout";
 import AuthInput from "../../components/auth/AuthInput";
 import AuthPasswordInput from "../../components/auth/AuthPasswordInput";
-import OAuthButton from "../../components/auth/OAuthButton";
+import OAuthButton from "../../components/auth/OAuthButton.jsx";
 import Divider from "../../components/auth/Divider";
 
 export default function Register() {

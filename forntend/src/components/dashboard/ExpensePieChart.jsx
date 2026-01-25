@@ -1,12 +1,13 @@
+import { memo } from "react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { useDashboard } from "../../hooks/dashboard/useDashboard";
 
 const COLORS = ["#2EE6A6", "#4DA3FF", "#FFC857", "#FF6A6A"];
 
-export default function ExpensePieChart({ month }) {
+const ExpensePieChart = memo(function ExpensePieChart({ month }) {
   const { data, isLoading } = useDashboard(month);
 
-  if (isLoading) return null;
+  if (isLoading || !data?.pie?.bySection?.length) return null;
 
   return (
     <div className="bg-surface border border-border rounded-xl p-5">
@@ -29,4 +30,6 @@ export default function ExpensePieChart({ month }) {
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+export default ExpensePieChart;

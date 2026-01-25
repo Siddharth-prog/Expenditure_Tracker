@@ -1,4 +1,4 @@
-import MonthlyPlan from "../models/MonthlyPlan.js";
+ import MonthlyPlan from "../models/MonthlyPlan.js";
 import Expense from "../models/Expense.js";
 import User from "../models/user.js";
 
@@ -9,7 +9,7 @@ export const getDashboardData = async (userId, month) => {
 
   const [user, plan, expenses] = await Promise.all([
     User.findById(userId)
-      .select("name email")
+      .select("name email gmail")
       .lean(),
 
     MonthlyPlan.findOne({ user: userId, month }).lean(),
@@ -21,50 +21,58 @@ export const getDashboardData = async (userId, month) => {
     throw new Error("User not found");
   }
 
-  /* -------- Aggregate expenses -------- */
+  /* ---------- SAFE MONTHLY PLAN ---------- */
+  const safePlan = plan ?? {
+    income: 0,
+    sections: [],
+  };
+
+  /* ---------- AGGREGATE EXPENSES ---------- */
   const spentBySection = {};
+  let totalSpent = 0;
+
   for (const e of expenses) {
-    spentBySection[e.section] =
-      (spentBySection[e.section] || 0) + e.amount;
+    const section = e.section || "Uncategorized";
+    spentBySection[section] =
+      (spentBySection[section] || 0) + e.amount;
+    totalSpent += e.amount;
   }
 
-  const totalSpent = expenses.reduce(
-    (s, e) => s + e.amount,
-    0
+  /* ---------- PIE DATA ---------- */
+  const pieBySection = Object.values(
+    expenses.reduce((acc, e) => {
+      const section = e.section || "Uncategorized";
+      acc[section] ??= { name: section, value: 0 };
+      acc[section].value += e.amount;
+      return acc;
+    }, {})
   );
-
-  const totalBudget =
-    plan?.sections?.reduce(
-      (s, sec) => s + sec.limit,
-      0
-    ) || 0;
 
   return {
     user: {
       name: user.name,
       email: user.email,
-      plan: "Pro", // static for now
+      gmail: user.gmail ?? { connected: false },
+      plan: "Pro",
     },
 
     overview: {
+      income: safePlan.income,
       totalSpent,
-      totalBudget,
-      savings: totalBudget - totalSpent,
-    },
-
-    pie: {
-      bySection: (plan?.sections || []).map((sec) => ({
-        name: sec.section,
-        value: spentBySection[sec.section] || 0,
-      })),
+      savings: safePlan.income - totalSpent,
     },
 
     monthlyPlan: {
-      sections: (plan?.sections || []).map((sec) => ({
+      income: safePlan.income,
+      sections: safePlan.sections.map((sec) => ({
         section: sec.section,
         limit: sec.limit,
         spent: spentBySection[sec.section] || 0,
       })),
+    },
+
+    pie: {
+      bySection: pieBySection,
     },
   };
 };

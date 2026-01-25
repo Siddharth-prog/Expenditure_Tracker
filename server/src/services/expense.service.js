@@ -2,45 +2,49 @@ import Expense from "../models/Expense.js";
 import MonthlyPlan from "../models/MonthlyPlan.js";
 
 export const createExpense = async (userId, data) => {
-  const { title, amount, section, category, date } = data;
+  try {
+    const { title, amount, section, category, date } = data;
 
-  if (!title || !amount || !section || !date) {
-    throw new Error("Missing required fields");
-  }
-
-  const month = new Date(date).toISOString().slice(0, 7);
-
-  // ✅ Always create expense first
-  const expense = await Expense.create({
-    user: userId,
-    title,
-    amount,
-    section,
-    category,
-    date,
-    month,
-  });
-
-  // ✅ Monthly plan is OPTIONAL
-  const plan = await MonthlyPlan.findOne({ user: userId, month });
-
-  if (plan) {
-    const sec = plan.sections.find(
-      (s) => s.section === section
-    );
-
-    // Optional auto-create section inside plan
-    if (!sec) {
-      plan.sections.push({
-        section,
-        limit: 0,
-      });
+    if (!title || !amount || !section || !date) {
+      throw new Error("Missing required fields");
     }
 
-    await plan.save();
-  }
+    const expenseDate = new Date(date);
+    const month = expenseDate.toISOString().slice(0, 7);
 
-  return expense;
+    // ✅ CREATE EXPENSE (THIS WAS BROKEN BEFORE)
+    const expense = await Expense.create({
+      user: userId,
+      title,
+      amount,
+      category: category || "Other",
+      section,
+      date: expenseDate,
+      month, // ✅ REQUIRED
+    });
+
+    // ✅ OPTIONAL: Sync with monthly plan
+    const plan = await MonthlyPlan.findOne({ user: userId, month });
+
+    if (plan) {
+      const sec = plan.sections.find(
+        (s) => s.section === section
+      );
+
+      if (!sec) {
+        plan.sections.push({
+          section,
+          limit: 0,
+        });
+        await plan.save();
+      }
+    }
+
+    return expense;
+  } catch (err) {
+    console.error("CREATE EXPENSE ERROR:", err);
+    throw err;
+  }
 };
 
 export const getExpenses = async (userId, month) => {

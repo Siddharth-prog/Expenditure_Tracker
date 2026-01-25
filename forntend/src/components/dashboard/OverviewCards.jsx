@@ -1,7 +1,6 @@
 import { useDashboard } from "../../hooks/dashboard/useDashboard";
 
-export default function OverviewCards() {
-  const month = new Date().toISOString().slice(0, 7);
+export default function OverviewCards({ month }) {
   const { data, isLoading } = useDashboard(month);
 
   if (isLoading) {
@@ -20,18 +19,24 @@ export default function OverviewCards() {
     );
   }
 
+  const income = data?.overview?.income ?? 0;
+  const totalSpent = data?.overview?.totalSpent ?? 0;
+
+  const savings = income - totalSpent; // ✅ can be negative
+
   const cards = [
     {
-      label: "Total Spent",
-      value: data.overview.totalSpent,
+      label: "Monthly Income",
+      value: income,
     },
     {
-      label: "Monthly Budget",
-      value: data.overview.totalBudget,
+      label: "Total Spent",
+      value: totalSpent,
     },
     {
       label: "Savings",
-      value: data.overview.savings,
+      value: savings,
+      danger: savings < 0,
     },
   ];
 
@@ -43,7 +48,11 @@ export default function OverviewCards() {
           className="bg-surface border border-border rounded-xl p-5"
         >
           <p className="text-textMuted text-sm">{c.label}</p>
-          <p className="text-2xl font-semibold text-textPrimary mt-1">
+          <p
+            className={`text-2xl font-semibold mt-1 ${
+              c.danger ? "text-danger" : "text-textPrimary"
+            }`}
+          >
             ₹{c.value}
           </p>
         </div>

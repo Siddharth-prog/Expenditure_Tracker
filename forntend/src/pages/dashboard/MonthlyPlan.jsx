@@ -1,101 +1,92 @@
-import DashboardNavbar from "../../components/dashboard/DashboardNavbar";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { useMonthlyPlan } from "../../hooks/budget/useMonthlyPlan";
+import { useEffect, useMemo, useState, memo } from 'react';
+import DashboardNavbar from '../../components/dashboard/DashboardNavbar';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+import { useMonthlyPlan } from '../../hooks/budget/useMonthlyPlan';
 
-const COLORS = ["#7C7CFF", "#34D399", "#FBBF24", "#F87171"];
+const COLORS = ['#7C7CFF', '#34D399', '#FBBF24', '#F87171'];
+
+/* -------- MEMOIZED PIE -------- */
+const BudgetPie = memo(function BudgetPie({ data }) {
+  return (
+    <ResponsiveContainer height={280}>
+      <PieChart>
+        <Pie data={data} dataKey="value" innerRadius={60}>
+          {data.map((_, i) => (
+            <Cell key={i} fill={COLORS[i % COLORS.length]} />
+          ))}
+        </Pie>
+        <Tooltip />
+      </PieChart>
+    </ResponsiveContainer>
+  );
+});
 
 export default function MonthlyPlan() {
   const month = new Date().toISOString().slice(0, 7);
 
-  const {
-    plan,
-    lockedSections,
-    savePlan,
-    copyLastMonth,
-    isLoading,
-  } = useMonthlyPlan(month);
+  /* -------- ALL HOOKS FIRST -------- */
+  const { plan, savePlan, isLoading } = useMonthlyPlan(month);
 
-  if (isLoading || !plan) return null;
+  const [draft, setDraft] = useState({
+    income: 0,
+    sections: [],
+  });
 
-  /* ---------- DERIVED DATA ---------- */
-  const pieData = plan.sections.map((s) => ({
-    name: s.section,
-    value: s.limit,
-  }));
+  useEffect(() => {
+    if (plan) {
+      setDraft(plan);
+    }
+  }, [plan]);
 
-  const totalAllocated = plan.sections.reduce(
-    (sum, s) => sum + s.limit,
-    0
-  );
+  const pieData = useMemo(() => {
+    return draft.sections.map((s) => ({
+      name: s.section || 'Unnamed',
+      value: s.limit,
+    }));
+  }, [draft.sections]);
 
-  const isOverAllocated = totalAllocated > plan.income;
+  /* -------- CONDITIONAL RENDER AFTER HOOKS -------- */
+  if (isLoading) {
+    return <p className="p-6">Loading…</p>;
+  }
 
-  /* ---------- UPDATE HELPERS ---------- */
-  const updateIncome = (income) => {
-    savePlan({
-      month,
-      income,
-      sections: plan.sections,
-    });
+  /* -------- DRAFT HELPERS -------- */
+  const updateIncomeDraft = (value) => {
+    setDraft((p) => ({ ...p, income: value }));
   };
 
-  const updateSection = (index, key, value) => {
-    const updated = [...plan.sections];
-    updated[index] = {
-      ...updated[index],
-      [key]: value,
-    };
-
-    savePlan({
-      month,
-      income: plan.income,
-      sections: updated,
+  const updateSectionDraft = (index, key, value) => {
+    setDraft((p) => {
+      const updated = [...p.sections];
+      updated[index] = { ...updated[index], [key]: value };
+      return { ...p, sections: updated };
     });
   };
 
   const addSection = () => {
-    savePlan({
-      month,
-      income: plan.income,
-      sections: [
-        ...plan.sections,
-        { section: "", limit: 0 },
-      ],
-    });
+    const updated = {
+      ...draft,
+      sections: [...draft.sections, { section: '', limit: 0 }],
+    };
+    setDraft(updated);
+    savePlan({ month, ...updated });
   };
 
   return (
     <div className="bg-bg min-h-screen">
       <DashboardNavbar />
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        <h2 className="text-2xl font-semibold">
-          Monthly Budget Plan
-        </h2>
-
-        {/* COPY LAST MONTH */}
-        <button
-          onClick={() => copyLastMonth(month)}
-          className="text-sm text-glow hover:underline"
-        >
-          Copy last month
-        </button>
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <h2 className="text-2xl font-semibold">Monthly Budget Plan</h2>
 
         {/* INCOME */}
         <div className="bg-surface p-4 rounded-xl">
           <label className="text-sm">Monthly Income</label>
           <input
             type="number"
-            value={plan.income}
-            onChange={(e) =>
-              updateIncome(Number(e.target.value))
-            }
+            value={draft.income}
+            onChange={(e) => updateIncomeDraft(Number(e.target.value) || 0)}
+            onBlur={() => savePlan({ month, ...draft })}
             className="text-black mt-2"
           />
         </div>
@@ -104,91 +95,37 @@ export default function MonthlyPlan() {
         <div className="bg-surface p-4 rounded-xl space-y-4">
           <h3 className="font-semibold">Budget Divisions</h3>
 
-          {plan.sections.map((s, index) => {
-            const locked = lockedSections.includes(
-              s.section
-            );
+          {draft.sections.map((s, i) => (
+            <div key={i} className="grid sm:grid-cols-2 gap-3">
+              <input
+                value={s.section}
+                onChange={(e) => updateSectionDraft(i, 'section', e.target.value)}
+                onBlur={() => savePlan({ month, ...draft })}
+                className="text-black"
+                placeholder="Section name"
+              />
+              <input
+                type="number"
+                value={s.limit}
+                onChange={(e) => updateSectionDraft(i, 'limit', Number(e.target.value) || 0)}
+                onBlur={() => savePlan({ month, ...draft })}
+                className="text-black"
+                placeholder="Limit"
+              />
+            </div>
+          ))}
 
-            return (
-              <div
-                key={index}
-                className="grid sm:grid-cols-3 gap-3"
-              >
-                <input
-                  value={s.section}
-                  disabled={locked}
-                  onChange={(e) =>
-                    updateSection(
-                      index,
-                      "section",
-                      e.target.value
-                    )
-                  }
-                  className="text-black"
-                />
-
-                <input
-                  type="number"
-                  value={s.limit}
-                  disabled={locked}
-                  onChange={(e) =>
-                    updateSection(
-                      index,
-                      "limit",
-                      Number(e.target.value)
-                    )
-                  }
-                  className="text-black"
-                />
-
-                {locked && (
-                  <p className="text-xs text-danger">
-                    Locked (expenses exist)
-                  </p>
-                )}
-              </div>
-            );
-          })}
-
-          <button
-            onClick={addSection}
-            className="text-glow"
-          >
+          <button onClick={addSection} className="text-glow">
             + Add Budget Division
           </button>
         </div>
 
         {/* PIE */}
-        <div className="bg-surface p-4 rounded-xl">
-          <ResponsiveContainer height={280}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                dataKey="value"
-                innerRadius={60}
-              >
-                {pieData.map((_, i) => (
-                  <Cell
-                    key={i}
-                    fill={COLORS[i % COLORS.length]}
-                  />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-
-          <p
-            className={`mt-4 text-sm ${
-              isOverAllocated
-                ? "text-danger"
-                : "text-textSecondary"
-            }`}
-          >
-            Allocated ₹{totalAllocated} / ₹
-            {plan.income}
-          </p>
-        </div>
+        {draft.sections.length > 0 && (
+          <div className="bg-surface p-4 rounded-xl">
+            <BudgetPie data={pieData} />
+          </div>
+        )}
       </div>
     </div>
   );
