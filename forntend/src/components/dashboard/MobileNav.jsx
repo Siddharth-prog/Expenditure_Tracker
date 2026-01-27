@@ -16,6 +16,7 @@ export default function MobileNav() {
           <NavLink to="/dashboard/yearly">Yearly</NavLink>
           <NavLink to="/dashboard/budget">Budgets</NavLink>
           <NavLink to="/dashboard/monthly-plan">Monthly Plan</NavLink>
+          <NavLink to="/dashboard/trips">Splits</NavLink>
         </div>
       )}
     </div>

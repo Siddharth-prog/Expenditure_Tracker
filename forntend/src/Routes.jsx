@@ -20,6 +20,8 @@ import Savings from "./pages/dashboard/Savings.jsx";
 import MonthlyPlan from "./pages/dashboard/MonthlyPlan.jsx";
 import VerifyEmail from "./pages/auth/verifyEmail.jsx";
 import VerifyEmailCallback from "./pages/auth/verifyEmailCallback.jsx";
+import Trips from "./pages/trips/Trips.jsx";
+import TripDetails from "./pages/trips/TripDetails.jsx";
 
 /* Future (after login) */
 // import Dashboard from "./pages/dashboard/Dashboard";
@@ -50,6 +52,8 @@ export default function AppRoutes() {
         <Route path="/dashboard/expenses" element={<Expenses />} />
         <Route path="/dashboard/savings" element={<Savings />} />
         <Route path="/dashboard/monthly-plan" element={<MonthlyPlan/>}/>
+        <Route path="/dashboard/trips" element={<Trips/>} />
+        <Route path="/dashboard/trips/:id" element={<TripDetails />} />
     </Routes>
   );
 }
