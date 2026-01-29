@@ -1,20 +1,29 @@
+import Trips from "../../models/Trips.js";
 import TripExpense from "../../models/TripExpense.js";
-import { calculateSplit, settleBalances } from "../../services/tripSplit.service.js";
+import { calculateNetBalances } from "../../services/tripSettlement.services.js";
 
 export const getTripSummary = async (req, res) => {
-  const expenses = await TripExpense.find({
-    trip: req.params.tripId,
-  });
+  try {
+    const { id } = req.params;
 
-  const members = [
-    ...new Set(expenses.flatMap(e => [e.paidBy, ...e.splitBetween]))
-  ];
+    const trip = await Trips.findOne({
+      _id: id,
+      user: req.user._id,
+    });
 
-  const balances = calculateSplit(expenses, members);
-  const settlements = settleBalances(balances);
+    if (!trip) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
 
-  res.json({
-    balances,
-    settlements,
-  });
+    const expenses = await TripExpense.find({ trip: id });
+
+    const balances = calculateNetBalances(trip, expenses);
+
+    res.json({
+      balances,
+    });
+  } catch (err) {
+    console.error("TRIP SUMMARY ERROR:", err);
+    res.status(500).json({ message: "Failed to load summary" });
+  }
 };

@@ -1,27 +1,23 @@
 import { Link } from "react-router-dom";
-import { useTrip } from "../../hooks/trips/useTrips";
+import { useTrips } from "../../hooks/trips/useTrips";
 import CreateTripModal from "./CreateTripModal";
+import DashboardNavbar from "../../components/dashboard/DashboardNavbar";
 
 export default function Trips() {
-  const { data = [], isLoading } = useTrip();
+  const { data = [], isLoading } = useTrips();
 
   if (isLoading) {
-    return (
-      <div className="p-6 text-textMuted">
-        Loading trips…
-      </div>
-    );
+    return <div className="p-6 text-textMuted">Loading trips…</div>;
   }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-      {/* Header */}
+      <DashboardNavbar/>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 className="text-2xl font-semibold">👥 Friend Splits</h2>
         <CreateTripModal />
       </div>
 
-      {/* Trips Grid */}
       {data.length === 0 ? (
         <div className="text-center py-12 text-textMuted">
           No trips yet. Create your first split 🚀
@@ -31,7 +27,7 @@ export default function Trips() {
           {data.map(trip => (
             <Link
               key={trip._id}
-              to={`/dashboard/trips/${trip._id}`}
+              to={`/dashboard/trips/${trip._id}`}   // ✅ FIXED
               className="group bg-surface border border-border rounded-2xl p-5 hover:border-glow transition"
             >
               <div className="flex justify-between items-start">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useTrip } from "../../hooks/trips/useTrips";
+import { useTrip } from "../../hooks/trips/useTrip";
 import { useAddTripExpense } from "../../hooks/trips/useAddTrips";
 
 export default function AddTripExpense({ tripId }) {

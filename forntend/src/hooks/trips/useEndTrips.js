@@ -5,9 +5,10 @@ export const useEndTrip = () => {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: endTrip,
+    mutationFn: (tripId) => endTrip(tripId),
     onSuccess: () => {
       qc.invalidateQueries(["trips"]);
+      qc.invalidateQueries(["trip"]);
     },
   });
 };

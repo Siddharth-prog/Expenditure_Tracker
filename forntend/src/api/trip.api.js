@@ -9,8 +9,8 @@ export const fetchTrips = () =>
 export const getTripsById = (tripId) =>
   api.get(`/trips/${tripId}`).then(r => r.data);
 
-export const endTrip = (id) =>
-  api.post(`/trips/${id}/end`);
+export const endTrip = (tripId) =>
+  api.post(`/trips/${tripId}/end`);
 
 export const fetchTripExpenses = (tripId) =>
   api.get(`/trips/${tripId}/expenses`).then(r => r.data);

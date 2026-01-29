@@ -24,6 +24,6 @@ router.post("/:id/end", protect, endTrip);
 router.get("/:id", protect, getTripById) ;
 router.post("/:tripId/expenses", protect, addTripExpense);
 router.get("/:tripId/expenses", protect, getTripExpenses);
-router.get("/:tripId/summary", protect, getTripSummary);
+router.get("/:id/summary", protect, getTripSummary);
 router.post("/:id/members", protect, addTripMember);
 export default router;

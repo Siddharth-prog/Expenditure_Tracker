@@ -44,13 +44,27 @@ export const getTrips = async (req, res) => {
 };
 
 /* END TRIP */
+import mongoose from "mongoose";
+
 export const endTrip = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      message: "Invalid trip id",
+    });
+  }
+
   const trip = await Trip.findOne({
-    _id: req.params.id,
+    _id: id,
     user: req.user._id,
   });
 
-  if (!trip) return res.sendStatus(404);
+  if (!trip) {
+    return res.status(404).json({
+      message: "Trip not found",
+    });
+  }
 
   trip.status = "ended";
   trip.endedAt = new Date();
